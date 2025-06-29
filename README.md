@@ -42,8 +42,8 @@ Este proyecto implementa un **sistema distribuido en Go** que simula un **puente
 
 - **Frontend:**
   - React
-  - Vite para desarrollo rápido
-  - WebSockets o REST API (según la integración final)
+  - Vite
+  - REST API
 
 ---
 
