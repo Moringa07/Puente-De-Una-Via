@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--careys-pink-100);
+  color: var(--careys-pink-950);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  /* Paleta de Colores Carey's Pink */
+  --careys-pink-50: #fbf5f7;
+  --careys-pink-100: #f7ecef;
+  --careys-pink-200: #f0dbe1;
+  --careys-pink-300: #e3bec8;
+  --careys-pink-400: #daaab8;
+  --careys-pink-500: #bf748c;
+  --careys-pink-600: #a85674;
+  --careys-pink-700: #8c4461;
+  --careys-pink-800: #763b54;
+  --careys-pink-900: #66354b;
+  --careys-pink-950: #371a26;
+
+  /* Variables de Diseño */
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+  --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
