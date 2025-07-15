@@ -4,6 +4,7 @@ import './styles/simulation.css';
 import { Car } from '../page/components/Car';
 import { StatsModal } from './components/StatsModal';
 
+// Traduce claves de estado a texto legible para el usuario.
 const translate = (key) => {
   const translations = {
     waiting: 'En Espera',
@@ -17,27 +18,33 @@ const translate = (key) => {
   return translations[key?.toLowerCase()] || key?.toUpperCase() || 'N/A';
 };
 
+// Componente principal que renderiza y gestiona la simulación.
 export default function Simulation() {
-  const [carConfig, setCarConfig] = useState(null);
-  const [cars, setCars] = useState([]);
-  const [bridgeStatus, setBridgeStatus] = useState(null);
-  const [isLoopingStopped, setIsLoopingStopped] = useState(false);
-  const [showStatsModal, setShowStatsModal] = useState(false);
-  const [carStats, setCarStats] = useState(null);
-  const [crossingTime, setCrossingTime] = useState(0);
-  const [restingTime, setRestingTime] = useState(0);
+  
+  const [carConfig, setCarConfig] = useState(null);// Almacena la configuración del vehículo del usuario actual.
+  const [cars, setCars] = useState([]);// Almacena la lista de todos los vehículos visibles en la simulación.
+  const [bridgeStatus, setBridgeStatus] = useState(null);// Guarda el estado actual del puente (ocupado, dirección, colas).
+  const [isLoopingStopped, setIsLoopingStopped] = useState(false);// Controla si el usuario ha detenido el ciclo de su vehículo.
+  const [showStatsModal, setShowStatsModal] = useState(false);// Gestiona la visibilidad del modal de estadísticas.
+  const [carStats, setCarStats] = useState(null); // Almacena las estadísticas del vehículo para mostrarlas en el modal.
+  const [crossingTime, setCrossingTime] = useState(0);// Guarda el tiempo restante de cruce del vehículo del usuario.
+  const [restingTime, setRestingTime] = useState(0);// Guarda el tiempo restante de descanso antes de volver a la cola.
 
+  // Referencias para almacenar los IDs de los intervalos y temporizadores.
   const pollingIntervalRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const timerRef = useRef(null);
 
+  // Efecto para gestionar la comunicación continua con el backend (polling y heartbeat).
   useEffect(() => {
+    // Función de limpieza para detener todos los intervalos activos.
     const cleanupIntervals = () => {
       clearInterval(pollingIntervalRef.current);
       clearInterval(heartbeatIntervalRef.current);
       clearInterval(timerRef.current);
     };
 
+    // Obtiene el estado completo de la simulación (colas, puente, coche actual).
     const fetchSimulationState = async () => {
       try {
         const [queueRes, statusRes] = await Promise.all([
@@ -71,6 +78,7 @@ export default function Simulation() {
       }
     };
 
+    // Envía una señal 'ping' para mantener activa la sesión del vehículo en el backend.
     const sendHeartbeat = async () => {
       if (carConfig?.id) {
         try {
@@ -85,15 +93,19 @@ export default function Simulation() {
       }
     };
 
+    // Inicia los intervalos de polling y heartbeat si hay un coche configurado.
     if (carConfig?.id) {
       pollingIntervalRef.current = setInterval(fetchSimulationState, 1000);
       heartbeatIntervalRef.current = setInterval(sendHeartbeat, 5000);
     }
 
+    // Función de limpieza que se ejecuta al desmontar el componente.
     return cleanupIntervals;
   }, [carConfig?.id]);
 
+  // Efecto para gestionar los temporizadores de cuenta regresiva (cruce y descanso).
   useEffect(() => {
+    // Limpia cualquier temporizador previo al re-ejecutarse.
     clearInterval(timerRef.current);
     setCrossingTime(0);
     setRestingTime(0);
@@ -102,12 +114,14 @@ export default function Simulation() {
     const mySpeed = carConfig?.speed;
     const canRequeueAt = carConfig?.CanRequeueAt;
 
+    // Inicia el temporizador de cruce si el coche está cruzando.
     if (myStatus === 'crossing') {
       let timeLeft = Math.round(4 + (10 - mySpeed) / 9 * 8);
       setCrossingTime(timeLeft);
       timerRef.current = setInterval(() => {
         setCrossingTime(prev => (prev > 0 ? prev - 1 : 0));
       }, 1000);
+    // Inicia el temporizador de descanso si el coche está esperando para volver a la cola.
     } else if (canRequeueAt > 0) {
       const now = Math.floor(Date.now() / 1000);
       const timeLeft = canRequeueAt - now;
@@ -120,22 +134,27 @@ export default function Simulation() {
       }
     }
 
+    // Limpia el temporizador al desmontar el componente o cambiar dependencias.
     return () => clearInterval(timerRef.current);
   }, [carConfig]);
 
+  // Efecto de inicialización. Se ejecuta una vez para registrar el vehículo.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     let dir = params.get('dir');
     let vel = parseInt(params.get('vel'), 10);
 
+    // Si no hay parámetros en la URL, genera valores aleatorios.
     if (!dir || !vel || isNaN(vel)) {
       dir = Math.random() < 0.5 ? 'NORTE' : 'SUR';
       vel = Math.floor(Math.random() * 10) + 1;
     }
 
+    // Registra el vehículo con los datos obtenidos.
     handleModalSubmit({ direccion: dir, velocidad: vel });
   }, []);
 
+  // Registra el vehículo en el servidor y opcionalmente genera más vehículos.
   const handleModalSubmit = async ({ direccion, velocidad }) => {
     try {
       const response = await fetch('/api/register', {
@@ -152,6 +171,7 @@ export default function Simulation() {
       const params = new URLSearchParams(window.location.search);
       const isFromURL = params.has('dir') && params.has('vel');
 
+      // Si es el primer vehículo, crea vehículos adicionales en nuevas pestañas.
       if (!isFromURL) {
         const numExtraCars = Math.floor(Math.random() * 5);
 
@@ -171,6 +191,7 @@ export default function Simulation() {
     }
   };
 
+  // Envía la señal al backend para que el vehículo no vuelva a la cola.
   const handleStopLoop = async () => {
     if (!carConfig || isLoopingStopped) return;
     try {
@@ -181,6 +202,7 @@ export default function Simulation() {
     }
   };
 
+  // Solicita las estadísticas del vehículo al backend y muestra el modal.
   const handleShowStats = async () => {
     if (!carConfig) return;
     try {
@@ -194,10 +216,12 @@ export default function Simulation() {
     }
   };
 
+  // Renderiza la interfaz de la simulación.
   return (
     <div className="container-simulacion">
       <header className="header">
         <div className="header-left">
+          {/* Muestra el botón de detener o el de ver estadísticas */}
           {!isLoopingStopped ? (
             <button onClick={handleStopLoop} className="stop-car-button">Terminar Simulación</button>
           ) : (
@@ -210,6 +234,7 @@ export default function Simulation() {
         </div>
       </header>
 
+      {/* Renderiza el modal de estadísticas si está activo */}
       {showStatsModal && (
         <StatsModal
           stats={carStats}
@@ -218,8 +243,10 @@ export default function Simulation() {
         />
       )}
 
+      {/* Renderiza el contenido principal solo si el vehículo está configurado */}
       {carConfig && (
         <main className="main-layout">
+          {/* Panel lateral que muestra la información del vehículo y del puente */}
           <aside className="left-panel">
             <div className="panel-box">
               <h3>Tu Vehículo</h3>
@@ -268,12 +295,14 @@ export default function Simulation() {
             </div>
           </aside>
 
+          {/* Panel central que contiene la visualización gráfica de la simulación */}
           <section className="center-panel">
             <div className="simulacion-box">
               <div className="bridge-container">
                 <img src="/bridge-sprite.png" alt="Puente" className="bridge-image" />
                 <img src="/water-sprite.png" alt="Agua" className="water-image" />
                 <div className="cars-lane">
+                  {/* Renderiza cada vehículo en la simulación */}
                   {cars.map(car => (
                     <Car
                       key={car.id}
