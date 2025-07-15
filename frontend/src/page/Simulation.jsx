@@ -20,7 +20,7 @@ const translate = (key) => {
 
 // Componente principal que renderiza y gestiona la simulación.
 export default function Simulation() {
-  
+
   const [carConfig, setCarConfig] = useState(null);// Almacena la configuración del vehículo del usuario actual.
   const [cars, setCars] = useState([]);// Almacena la lista de todos los vehículos visibles en la simulación.
   const [bridgeStatus, setBridgeStatus] = useState(null);// Guarda el estado actual del puente (ocupado, dirección, colas).
@@ -121,7 +121,7 @@ export default function Simulation() {
       timerRef.current = setInterval(() => {
         setCrossingTime(prev => (prev > 0 ? prev - 1 : 0));
       }, 1000);
-    // Inicia el temporizador de descanso si el coche está esperando para volver a la cola.
+      // Inicia el temporizador de descanso si el coche está esperando para volver a la cola.
     } else if (canRequeueAt > 0) {
       const now = Math.floor(Date.now() / 1000);
       const timeLeft = canRequeueAt - now;
@@ -273,12 +273,6 @@ export default function Simulation() {
                   {crossingTime > 0 ? `${crossingTime}s` : 'N/A'}
                 </span>
               </p>
-              <p>
-                <strong>Próximo cruce en:</strong>
-                <span className="time-value">
-                  {restingTime > 0 ? `${restingTime}s` : 'N/A'}
-                </span>
-              </p>
             </div>
 
             <div className="panel-box">
@@ -307,9 +301,11 @@ export default function Simulation() {
                     <Car
                       key={car.id}
                       {...car}
-                      animationDuration={car.status === 'crossing' ? crossingTime : 0}
+                      isLocal={car.id === carConfig?.id} 
+                      animationDuration={car.status === 'crossing' && car.id === carConfig?.id ? crossingTime : 0}
                     />
                   ))}
+
                 </div>
               </div>
             </div>
