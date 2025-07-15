@@ -53,11 +53,13 @@ Este proyecto implementa un **sistema distribuido en Go** que simula un **puente
 
 ```bash
 cd Backend/server
+go mod tidy
 go run server.go
 ```
 ### 2 Iniciar el Frontend
 
 ```bash
 cd frontend/client
+npm i
 npm run dev
 ```
