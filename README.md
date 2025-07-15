@@ -1,7 +1,6 @@
-
 # Simulador Distribuido de Puente de Una Vía
 
-Este proyecto implementa un **sistema distribuido en Go** que simula un **puente de una sola vía**, donde vehículos (clientes) se conectan al servidor, se identifican y solicitan cruzar el puente siguiendo reglas de concurrencia y gestión de colas por dirección.
+Este proyecto implementa un **sistema distribuido en Go** que simula un **puente de una sola vía**, donde vehículos se conectan al servidor, se identifican y solicitan cruzar el puente siguiendo reglas de concurrencia y gestión de colas por dirección.
 
 ---
 
@@ -12,23 +11,24 @@ Este proyecto implementa un **sistema distribuido en Go** que simula un **puente
   - Administra colas de espera por dirección.
   - Registra y asigna identificadores únicos a los vehículos.
   - Simula el cruce del puente de manera concurrente.
+  - Expone una API REST para comunicación con el cliente web.
 
-- `client.go` → Cliente que representa un vehículo:
-  - Genera un UUID único.
-  - Se conecta al servidor.
-  - Solicita cruzar el puente de forma cíclica.
-  - Simula el cruce y el tiempo de espera entre intentos.
+- **Frontend Web (en React)**:
+  - Permite registrar vehículos que cruzan el puente.
+  - Muestra animaciones de cruce en tiempo real.
+  - Visualiza estadísticas por vehículo y el estado del puente.
+  - Se comunica con el backend vía HTTP.
 
 ---
 
-##  Objetivos de la Simulación
+## Objetivos de la Simulación
 
 ✔ Controlar el acceso seguro al puente para evitar colisiones.  
 ✔ Simular vehículos cruzando en ambas direcciones.  
 ✔ Gestionar colas de espera diferenciadas por dirección (NORTE o SUR).  
-✔ Permitir múltiples clientes remotos de forma concurrente.  
+✔ Permitir múltiples vehículos concurrentes vía navegador.  
 ✔ Asignar IDs persistentes a cada vehículo para su identificación continua.  
-✔ Visualizar en tiempo real el estado del puente y las colas desde un panel web. 
+✔ Visualizar en tiempo real el estado del puente y las colas desde un panel web.
 
 ---
 
@@ -37,21 +37,27 @@ Este proyecto implementa un **sistema distribuido en Go** que simula un **puente
 - **Backend:**
   - Go (Golang)
   - Goroutines y Mutex para concurrencia
-  - Red TCP para comunicación cliente-servidor
+  - API REST
   - Aleatoriedad en tiempos de cruce y espera
 
 - **Frontend:**
   - React
   - Vite
-  - REST API
+  - REST API para integración con el backend
 
 ---
 
 ## Cómo Ejecutar el Proyecto
 
-### 1️⃣ Iniciar el Servidor
+### 1. Iniciar el Servidor
 
 ```bash
 cd Backend/server
 go run server.go
+```
+### 2 Iniciar el Frontend
+
+```bash
+cd frontend/client
+npm run dev
 ```
