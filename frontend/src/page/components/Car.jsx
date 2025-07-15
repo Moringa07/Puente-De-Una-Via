@@ -1,19 +1,18 @@
-import React from 'react';
+// Componente que renderiza visualmente un único vehículo en la simulación.
+// Aplica clases CSS y estilos en línea para controlar su apariencia, posición y la animación de cruce, basándose en las propiedades recibidas.
+export const Car = ({ id, direction, status, spriteType, animationDuration }) => {
+  const carClassName = `car-sprite direction-${direction.toLowerCase()} ${status === 'crossing' ? 'crossing' : ''}`;
 
-export const Car = ({ id, direction, position, spriteType }) => {
-  const carClassName = `car-sprite ${direction === 'Sur' ? 'flipped' : ''}`;
-
-  const carImageSrc = `/car${spriteType}.png`;
+  const carStyle = status === 'crossing'
+    ? { animationDuration: `${animationDuration}s` }
+    : {};
 
   return (
     <img
-      src={carImageSrc}
+      src={`/car${spriteType}.png`}
       alt={`Auto ${id}`}
       className={carClassName}
-      style={{
-        top: position.top,
-        left: position.left,
-      }}
+      style={carStyle}
     />
   );
 };

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import '../styles/components.css'; 
 
+// Componente que renderiza el modal inicial para que el usuario configure la dirección y velocidad de su vehículo antes de comenzar la simulación.
 export const ModalInicial = ({ onSubmit }) => {
   const [direccion, setDireccion] = useState('Norte');
   const [velocidad, setVelocidad] = useState(5);
+
   const handleDirectionChange = (e) => {
     setDireccion(e.target.value === '0' ? 'Norte' : 'Sur');
   };
