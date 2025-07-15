@@ -137,6 +137,24 @@ export default function Simulation() {
     return () => clearInterval(timerRef.current);
   }, [carConfig]);
 
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  let dir = params.get('dir');
+  let vel = parseInt(params.get('vel'), 10);
+
+  // Si vienen en URL, pero están mal, o queremos que siempre sean aleatorios:
+  if (!dir || !vel || isNaN(vel)) {
+    dir = Math.random() < 0.5 ? 'NORTE' : 'SUR';
+    vel = Math.floor(Math.random() * 10) + 1;
+  }
+
+  // Ejecuta registro con valores (ya sean de URL o aleatorios)
+  handleModalSubmit({ direccion: dir, velocidad: vel });
+}, []);
+
+
+
   // Manejador para enviar los datos del formulario inicial al backend para registrar el vehículo.
   const handleModalSubmit = async ({ direccion, velocidad }) => {
     try {
@@ -151,8 +169,32 @@ export default function Simulation() {
       setCarConfig({ ...data.car, spriteType: (data.car.id % 4) + 1 });
       setBridgeStatus(data.bridge_status);
       setShowModal(false);
-    } catch (error) { console.error("Error en registro:", error); }
+
+      // Verificamos si este cliente fue iniciado manualmente (sin ?dir=...&vel=...)
+      const params = new URLSearchParams(window.location.search);
+      const isFromURL = params.has('dir') && params.has('vel');
+
+      if (!isFromURL) {
+        // Solo el cliente principal genera autos adicionales
+        const numExtraCars = Math.floor(Math.random() * 5);
+
+        for (let i = 0; i < numExtraCars; i++) {
+          const randomSpeed = Math.floor(Math.random() * 10) + 1;
+          const randomDirection = Math.random() < 0.5 ? 'NORTE' : 'SUR';
+
+          window.open(
+            `/simulacion?dir=${randomDirection}&vel=${randomSpeed}`,
+            `_blank`,
+            `width=1000,height=700`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error en registro:", error);
+    }
   };
+
+
 
   // Manejador para notificar al backend que el vehículo del usuario debe dejar de entrar en la cola.
   const handleStopLoop = async () => {
