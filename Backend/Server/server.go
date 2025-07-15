@@ -1,63 +1,225 @@
-//Servidor go run server.go
-
+//Servidor que funciona como el puente de una vía
 package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
-	"math/rand"
 	"log"
+	"math/rand"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"github.com/gorilla/mux"
 )
 
-// El struct Car guarda tanto el ID numérico asignado como el UUID del cliente.
 type Car struct {
-	ID        int    // ID numérico secuencial asignado por el servidor.
-	UUID      string // ID único generado por el cliente.
-	Direction string
-	Speed     int
-	Conn      net.Conn
+	ID        int       `json:"id"`
+	UUID      string    `json:"uuid"`
+	Direction string    `json:"direction"`
+	Speed     int       `json:"speed"`
+	Conn      net.Conn  `json:"-"`
+	Position  int       `json:"position"` // Posición en la cola
+	Status    string    `json:"status"`   // "waiting", "crossing", "finished"
+}
+
+type BridgeStatus struct {
+	Busy           bool   `json:"busy"`
+	CurrentDir     string `json:"current_dir"`
+	CurrentCarID   int    `json:"current_car_id"`
+	QueueNorthSize int    `json:"queue_north_size"`
+	QueueSouthSize int    `json:"queue_south_size"`
+	TrafficLight   string `json:"traffic_light"` // "green", "red"
 }
 
 var (
 	mutex sync.Mutex
-
-	// Estado del puente
 	bridgeBusy bool
 	currentDir string
-
-	// Colas de espera
+	currentCar *Car
 	queueNorth []Car
 	queueSouth []Car
-
-	// --- NUEVOS ELEMENTOS PARA GESTIÓN DE IDs ---
-	// Contador para asignar IDs secuenciales a los coches nuevos.
 	carCounter int
-	// Registro para mapear el UUID de un cliente a su ID numérico asignado.
-	// Esto permite reconocer a un cliente aunque se reconecte.
 	clientRegistry = make(map[string]int)
+	allCars    = make(map[int]Car) // Registro de todos los autos para la API
 )
 
 func main() {
+	// Iniciar servidor TCP en una goroutine
+	go startTCPServer()
+	
+	// Iniciar servidor HTTP/REST
+	startHTTPServer()
+}
+
+
+func startTCPServer() {
 	listener, err := net.Listen("tcp", ":8050")
 	if err != nil {
-		log.Fatalf("Error al iniciar el servidor: %v", err)
+		log.Fatalf("Error al iniciar servidor TCP: %v", err)
 	}
 	defer listener.Close()
-	log.Println("Servidor del puente y registro de vehículos activo en el puerto 8050")
+	log.Println("Servidor TCP activo en :8050")
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("Error al aceptar conexión: %v", err)
+			log.Printf("Error al aceptar conexión TCP: %v", err)
 			continue
 		}
 		go handleClient(conn)
 	}
+}
+
+func startHTTPServer() {
+	r := mux.NewRouter()
+	
+	r.HandleFunc("/api/status", getStatusHandler).Methods("GET")
+	r.HandleFunc("/api/register", registerVehicleHandler).Methods("POST")
+	r.HandleFunc("/api/vehicle/{id}", getVehicleHandler).Methods("GET")
+	r.HandleFunc("/api/queue", getQueueHandler).Methods("GET")
+	
+	log.Println("Servidor HTTP REST activo en :8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+// Handlers HTTP
+func getStatusHandler(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	
+	status := BridgeStatus{
+		Busy:           bridgeBusy,
+		CurrentDir:     currentDir,
+		CurrentCarID:   func() int { if currentCar != nil { return currentCar.ID }; return 0 }(),
+		QueueNorthSize: len(queueNorth),
+		QueueSouthSize: len(queueSouth),
+		TrafficLight:   "red", // Se calcula después
+	}
+	
+	// Determinar semáforo para nueva solicitud
+	if !bridgeBusy || (currentCar != nil && currentCar.Direction == currentDir) {
+		status.TrafficLight = "green"
+	}
+	
+	respondWithJSON(w, http.StatusOK, status)
+}
+
+func registerVehicleHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UUID      string `json:"uuid"`
+		Direction string `json:"direction"`
+		Speed     int    `json:"speed"`
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Formato inválido")
+		return
+	}
+	
+	mutex.Lock()
+	defer mutex.Unlock()
+	
+	// Asignar ID (igual que en TCP)
+	assignedID, exists := clientRegistry[req.UUID]
+	if !exists {
+		carCounter++
+		assignedID = carCounter
+		clientRegistry[req.UUID] = assignedID
+	}
+	
+	// Crear auto (sin conexión TCP)
+	car := Car{
+		ID:        assignedID,
+		UUID:      req.UUID,
+		Direction: strings.ToUpper(req.Direction),
+		Speed:     req.Speed,
+		Status:    "waiting",
+	}
+	
+	// Calcular posición en cola
+	if car.Direction == "NORTE" {
+		car.Position = len(queueNorth) + 1
+	} else {
+		car.Position = len(queueSouth) + 1
+	}
+	
+	// Guardar referencia para la API
+	allCars[car.ID] = car
+	
+	// Determinar semáforo
+	trafficLight := "red"
+	if !bridgeBusy || currentDir == car.Direction {
+		trafficLight = "green"
+	}
+	
+	// Responder con información combinada
+	response := struct {
+		Car          Car         `json:"car"`
+		BridgeStatus BridgeStatus `json:"bridge_status"`
+	}{
+		Car: car,
+		BridgeStatus: BridgeStatus{
+			Busy:           bridgeBusy,
+			CurrentDir:     currentDir,
+			CurrentCarID:   func() int { if currentCar != nil { return currentCar.ID }; return 0 }(),
+			TrafficLight:   trafficLight,
+			QueueNorthSize: len(queueNorth),
+			QueueSouthSize: len(queueSouth),
+		},
+	}
+	
+	respondWithJSON(w, http.StatusOK, response)
+}
+
+func getVehicleHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "ID inválido")
+		return
+	}
+	
+	mutex.Lock()
+	defer mutex.Unlock()
+	
+	car, exists := allCars[id]
+	if !exists {
+		respondWithError(w, http.StatusNotFound, "Vehículo no encontrado")
+		return
+	}
+	
+	respondWithJSON(w, http.StatusOK, car)
+	log.Printf("IDs registrados: %v", allCars)
+}
+
+func getQueueHandler(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	
+	response := struct {
+		North []Car `json:"north"`
+		South []Car `json:"south"`
+	}{
+		North: queueNorth,
+		South: queueSouth,
+	}
+	
+	respondWithJSON(w, http.StatusOK, response)
+}
+
+// Funciones auxiliares HTTP
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(payload)
+}
+
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	respondWithJSON(w, code, map[string]string{"error": message})
 }
 
 func handleClient(conn net.Conn) {
@@ -93,13 +255,18 @@ func handleClient(conn net.Conn) {
 	mutex.Unlock()
 	// --- FIN LÓGICA DE REGISTRO ---
 
-	car := Car{
-		ID:        assignedID,
-		UUID:      clientUUID,
-		Direction: direction,
-		Speed:     speed,
-		Conn:      conn,
-	}
+ car := Car{
+        ID:        assignedID,
+        UUID:      clientUUID,
+        Direction: direction,
+        Speed:     speed,
+        Conn:      conn,
+        Status:    "waiting", 
+    }
+
+	mutex.Lock()
+    allCars[car.ID] = car
+    mutex.Unlock()
 
 	log.Printf("[Auto %d] solicita cruzar desde %s", car.ID, car.Direction)
 	requestCross(car)
@@ -109,9 +276,23 @@ func requestCross(car Car) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	// Actualizar estado del auto
+	if c, exists := allCars[car.ID]; exists {
+		c.Status = "waiting"
+		allCars[car.ID] = c
+	}
+
 	if !bridgeBusy {
 		bridgeBusy = true
 		currentDir = car.Direction
+		currentCar = &car
+		
+		// Actualizar estado del auto
+		if c, exists := allCars[car.ID]; exists {
+			c.Status = "crossing"
+			allCars[car.ID] = c
+		}
+		
 		go allowCross(car)
 		return
 	}
@@ -121,29 +302,29 @@ func requestCross(car Car) {
 	} else {
 		queueSouth = append(queueSouth, car)
 	}
-	log.Printf("[Auto %d] encolado. Colas -> Norte: %d, Sur: %d", car.ID, len(queueNorth), len(queueSouth))
 }
 
 func allowCross(car Car) {
 	defer car.Conn.Close()
 
-	log.Printf(" [Auto %d] tiene permiso. Cruzando el puente...", car.ID)
-	// ID numérico en el mensaje de permiso para que el cliente lo obtenga.
+	// Notificar al cliente TCP
 	fmt.Fprintf(car.Conn, "Auto %d, permiso concedido para cruzar", car.ID)
 
-	// El servidor simula que el puente está ocupado por un tiempo.
-	// Este es el tiempo aleatorio en el puente que afecta al sistema.
 	tiempoCruceServidor := rand.Intn(10) + 2 
 	time.Sleep(time.Duration(tiempoCruceServidor) * time.Second)
 
-	log.Printf("[Auto %d] ha terminado de cruzar. Puente liberado.", car.ID)
-
 	mutex.Lock()
+	// Actualizar estado del auto
+	if c, exists := allCars[car.ID]; exists {
+		c.Status = "finished"
+		allCars[car.ID] = c
+	}
+	
 	bridgeBusy = false
+	currentCar = nil
 	processQueue()
 	mutex.Unlock()
 }
-
 func processQueue() {
 	var nextCar *Car
 
