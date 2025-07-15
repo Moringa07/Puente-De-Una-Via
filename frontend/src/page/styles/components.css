@@ -1,4 +1,7 @@
+/* CSS PARA LOS COMPONENTES*/
 
+
+/* Define el fondo oscuro y desenfocado que cubre toda la pantalla cuando un modal está activo. */
 .modal-container {
   position: fixed;
   top: 0;
@@ -13,6 +16,7 @@
   backdrop-filter: blur(5px);
 }
 
+/* Estilo para el contenedor principal de los modales. */
 .modal-box {
   background: var(--careys-pink-50);
   padding: 2.5rem;
@@ -23,29 +27,34 @@
   border: 1px solid var(--careys-pink-200);
 }
 
+/* Organiza los elementos del formulario dentro del modal en una columna. */
 .modal-form {
   display: flex;
   flex-direction: column;
   gap: 1.8rem;
 }
 
+/* Estilo para el título del modal. */
 .modal-form h2 {
   text-align: center;
   margin-top: 0;
   color: var(--careys-pink-800);
 }
 
+/* Agrupa una etiqueta y su campo de entrada correspondiente. */
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+/* Estilo para las etiquetas de los campos del formulario. */
 .form-group label {
   font-weight: 500;
   color: var(--careys-pink-700);
 }
 
+/* Estilo para el campo de entrada numérico de la velocidad. */
 .velocity-input {
   padding: 0.75rem;
   border: 1px solid var(--careys-pink-300);
@@ -57,23 +66,27 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+/* Resalta el campo de velocidad cuando está seleccionado (en foco). */
 .velocity-input:focus {
   outline: none;
   border-color: var(--careys-pink-500);
   box-shadow: 0 0 0 3px var(--careys-pink-200);
 }
 
+/* Contenedor para el slider de dirección y sus etiquetas de texto. */
 .slider-wrapper {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
+/* Estilo para el texto "Norte" y "Sur" junto al slider. */
 .slider-wrapper span {
   font-size: 0.9rem;
   color: var(--careys-pink-600);
 }
 
+/* Estilo base para el control deslizante (slider), eliminando la apariencia por defecto del navegador. */
 .direction-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -85,6 +98,7 @@
   cursor: pointer;
 }
 
+/* Estilo para el círculo de control del slider en navegadores WebKit (Chrome, Safari). */
 .direction-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -97,6 +111,7 @@
   transition: background-color 0.2s;
 }
 
+/* Estilo para el círculo de control del slider en Firefox. */
 .direction-slider::-moz-range-thumb {
   width: 24px;
   height: 24px;
@@ -107,10 +122,12 @@
   transition: background-color 0.2s;
 }
 
+/* Efecto al pasar el mouse sobre el círculo de control del slider. */
 .direction-slider::-webkit-slider-thumb:hover {
   background-color: var(--careys-pink-700);
 }
 
+/* Estilo para los botones de envío/cierre en los modales. */
 .submit-button {
   padding: 0.8rem 1.5rem;
   border: none;
@@ -124,6 +141,7 @@
   margin-top: 1rem;
 }
 
+/* Efectos de interacción para el botón (hover y click). */
 .submit-button:hover {
   background-color: var(--careys-pink-700);
   transform: translateY(-2px);
@@ -133,3 +151,74 @@
   transform: translateY(0);
 }
 
+/* Alinea el contenido del modal de estadísticas al centro. */
+.stats-modal {
+  text-align: center;
+}
+
+/* Estilo para mostrar el ID del vehículo en el modal de estadísticas. */
+.stats-id {
+  font-size: 1.1rem;
+  color: var(--careys-pink-600);
+  margin-bottom: 1.5rem;
+}
+
+/* Define la cuadrícula para organizar las estadísticas. */
+.stats-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Contenedor para un único dato estadístico (etiqueta y valor). */
+.stat-item {
+  background-color: var(--careys-pink-100);
+  padding: 1rem;
+  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Estilo para el texto descriptivo de la estadística (ej: "Cruces Totales"). */
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--careys-pink-700);
+}
+
+/* Estilo para el valor numérico de la estadística. */
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--careys-pink-800);
+}
+
+/* Redefinición de la cuadrícula de estadísticas con diferentes estilos. */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+/* Redefinición del contenedor de un dato estadístico. */
+.stat-item {
+  background-color: #f0f0f0;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+/* Redefinición del texto descriptivo de la estadística. */
+.stat-label {
+  font-size: 0.9rem;
+  color: #555;
+  display: block;
+}
+
+/* Redefinición del valor numérico de la estadística. */
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #222;
+}

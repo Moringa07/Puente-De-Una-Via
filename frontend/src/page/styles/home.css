@@ -1,0 +1,118 @@
+/* CSS PARA LA PÁGINA DEL HOME*/
+
+
+/* Animación para que los elementos aparezcan desde abajo y se desvanezcan. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animación que mueve la posición de un fondo de gradiente para crear un efecto de flujo. */
+@keyframes animated-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Contenedor principal de la página de inicio, ocupando toda la pantalla con un fondo animado. */
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+  
+  background: linear-gradient(135deg, var(--careys-pink-100), var(--careys-pink-200), var(--careys-pink-50));
+  background-size: 400% 400%;
+  animation: animated-gradient 15s ease infinite;
+}
+
+/* Caja central que contiene el texto de bienvenida, con un fondo semitransparente y desenfocado. */
+.home-content-box {
+  background-color: rgba(251, 245, 247, 0.8); 
+  padding: 3rem 4rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  max-width: 800px;
+  border: 1px solid rgba(247, 236, 239, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Asigna la animación de aparición a todos los elementos de texto y al botón. */
+.home-title, .home-description, .home-authors, .start-button {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0; 
+}
+
+/* Estilo y retardo de animación para el título principal. */
+.home-title {
+  font-size: 2.5rem;
+  color: var(--careys-pink-800);
+  margin-bottom: 1.5rem;
+  animation-delay: 0.2s; 
+}
+
+/* Estilo y retardo de animación para el párrafo de descripción. */
+.home-description {
+  font-size: 1.1rem;
+  color: var(--careys-pink-700);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  animation-delay: 0.4s; 
+}
+
+/* Estilo y retardo de animación para el texto de los autores. */
+.home-authors {
+  font-size: 1rem;
+  color: var(--careys-pink-600);
+  margin-bottom: 2.5rem;
+  animation-delay: 0.6s;
+}
+
+/* Estilo para resaltar los nombres de los autores. */
+.home-authors strong {
+  color: var(--careys-pink-700);
+}
+
+/* Estilo y retardo de animación para el botón de inicio de la simulación. */
+.start-button {
+  display: inline-block;
+  text-decoration: none;
+  padding: 1rem 2.5rem;
+  border: none;
+  background-color: var(--careys-pink-600);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+  box-shadow: var(--shadow-sm);
+  animation-delay: 0.8s; 
+}
+
+/* Efecto visual cuando el cursor se encuentra sobre el botón. */
+.start-button:hover {
+  background-color: var(--careys-pink-700);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Efecto visual cuando se hace clic en el botón. */
+.start-button:active {
+  transform: translateY(0);
+}
